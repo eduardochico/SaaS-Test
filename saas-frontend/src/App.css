@@ -1,0 +1,49 @@
+.App {
+  display: flex;
+}
+
+.main-content {
+  flex-grow: 1;
+  padding: 20px;
+  /* Add a background color to distinguish it for now */
+  background-color: #ffffff;
+  min-height: 100vh; /* Ensure main content also takes full height */
+}
+
+/* Removing default App-logo styles, can be re-added if logo is used differently */
+/* .App-logo {
+  height: 40vmin;
+  pointer-events: none;
+} */
+
+/* Removing App-logo animation */
+/* @media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+} */
+
+.App-header {
+  /* background-color: #282c34; */ /* Removed to let main-content handle bg */
+  /* min-height: 100vh; */ /* Handled by main-content now */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: #282c34; /* Changed text color to be visible on light background */
+}
+
+.App-link {
+  color: #007bff; /* Standard link blue, consistent with menu hover */
+}
+
+/* Removing App-logo animation */
+/* @keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+} */
