@@ -6,6 +6,8 @@ const mockProducts = [
     productName: "Laptop Pro X1",
     categories: ["Electronics", "Computers", "Laptops"],
     price: 1499.99,
+    brand: "",
+    discount: 0,
   },
   {
     id: 2,
@@ -14,6 +16,8 @@ const mockProducts = [
     productName: "Wireless Ergonomic Mouse",
     categories: ["Electronics", "Accessories", "Peripherals"],
     price: 39.99,
+    brand: "",
+    discount: 0,
   },
   {
     id: 3,
@@ -22,6 +26,8 @@ const mockProducts = [
     productName: "Mechanical Keyboard RGB",
     categories: ["Electronics", "Accessories", "Peripherals"],
     price: 89.50,
+    brand: "",
+    discount: 0,
   },
   {
     id: 4,
@@ -30,6 +36,8 @@ const mockProducts = [
     productName: "27-inch 4K Monitor",
     categories: ["Electronics", "Monitors"],
     price: 349.00,
+    brand: "",
+    discount: 0,
   },
   {
     id: 5,
@@ -38,6 +46,8 @@ const mockProducts = [
     productName: "USB-C Hub 8-in-1",
     categories: ["Electronics", "Accessories", "Hubs"],
     price: 59.99,
+    brand: "",
+    discount: 0,
   },
   {
     id: 6,
@@ -46,6 +56,8 @@ const mockProducts = [
     productName: "Noise Cancelling Headphones",
     categories: ["Electronics", "Audio", "Headphones"],
     price: 199.99,
+    brand: "",
+    discount: 0,
   },
   {
     id: 7,
@@ -54,6 +66,8 @@ const mockProducts = [
     productName: "Smartphone Holder for Car",
     categories: ["Mobile", "Accessories"],
     price: 15.75,
+    brand: "",
+    discount: 0,
   },
   {
     id: 8,
@@ -62,6 +76,8 @@ const mockProducts = [
     productName: "Portable SSD 1TB",
     categories: ["Electronics", "Storage", "SSD"],
     price: 120.00,
+    brand: "",
+    discount: 0,
   },
   {
     id: 9,
@@ -70,6 +86,8 @@ const mockProducts = [
     productName: "Webcam HD 1080p",
     categories: ["Electronics", "Peripherals", "Webcams"],
     price: 45.00,
+    brand: "",
+    discount: 0,
   },
   {
     id: 10,
@@ -78,6 +96,8 @@ const mockProducts = [
     productName: "Smartwatch Fitness Tracker",
     categories: ["Wearables", "Electronics"],
     price: 79.99,
+    brand: "",
+    discount: 0,
   },
   {
     id: 11,
@@ -86,6 +106,8 @@ const mockProducts = [
     productName: "Gaming Chair Pro",
     categories: ["Furniture", "Gaming"],
     price: 250.00,
+    brand: "",
+    discount: 0,
   },
   {
     id: 12,
@@ -94,6 +116,8 @@ const mockProducts = [
     productName: "Bluetooth Speaker Waterproof",
     categories: ["Audio", "Speakers", "Electronics"],
     price: 65.50,
+    brand: "",
+    discount: 0,
   },
   {
     id: 13,
@@ -102,6 +126,8 @@ const mockProducts = [
     productName: "Tablet 10-inch",
     categories: ["Electronics", "Tablets"],
     price: 299.00,
+    brand: "",
+    discount: 0,
   },
   {
     id: 14,
@@ -110,6 +136,8 @@ const mockProducts = [
     productName: "Electric Standing Desk",
     categories: ["Furniture", "Office"],
     price: 399.99,
+    brand: "",
+    discount: 0,
   },
   {
     id: 15,
@@ -118,6 +146,8 @@ const mockProducts = [
     productName: "Wi-Fi Router AX6000",
     categories: ["Electronics", "Networking"],
     price: 179.00,
+    brand: "",
+    discount: 0,
   },
   {
     id: 16,
@@ -126,6 +156,8 @@ const mockProducts = [
     productName: "Laptop Stand Adjustable",
     categories: ["Accessories", "Ergonomics"],
     price: 22.99,
+    brand: "",
+    discount: 0,
   },
   {
     id: 17,
@@ -134,6 +166,8 @@ const mockProducts = [
     productName: "Digital Photo Frame 8-inch",
     categories: ["Home", "Electronics"],
     price: 55.00,
+    brand: "",
+    discount: 0,
   }
 ];
 
