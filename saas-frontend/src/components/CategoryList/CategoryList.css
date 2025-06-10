@@ -1,0 +1,108 @@
+.category-list-container {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.category-list-container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.btn-create-category {
+  background-color: #28a745; /* Green color for categories */
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1em;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.btn-create-category:hover {
+  background-color: #218838;
+}
+
+.categories-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.categories-table th,
+.categories-table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.categories-table th {
+  background-color: #e9ecef; /* Lighter gray for category headers */
+  color: #333;
+  font-weight: bold;
+}
+
+.categories-table tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.categories-table tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+.categories-table .btn-edit,
+.categories-table .btn-delete {
+  padding: 6px 12px;
+  margin-right: 5px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+/* Using existing btn-edit and btn-delete styles from BrandList or global if available */
+/* For consistency, assuming .btn-edit and .btn-delete are styled as before or globally */
+
+/* Basic search and pagination styling if added later */
+.search-container {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.search-input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 300px;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.pagination-controls button {
+  background-color: #28a745; /* Green for category pagination */
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  margin: 0 5px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pagination-controls button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.pagination-controls span {
+  margin: 0 10px;
+}

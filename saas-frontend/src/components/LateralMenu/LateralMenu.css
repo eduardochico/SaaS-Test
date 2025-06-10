@@ -35,3 +35,10 @@
   color: #007bff;
   /* background-color: #e0e0e0; */ /* Optional: if you want link bg change too, but li is better */
 }
+
+/* Style for active NavLink */
+.lateral-menu nav ul li a.active-link {
+  font-weight: bold;
+  color: #007bff; /* Example active color */
+  background-color: #e0e0e0; /* Light background for active link's li for better visibility */
+}
