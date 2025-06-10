@@ -1,12 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import mockProducts from '../../data/products.js';
 import './ProductList.css';
+import ProductForm from '../ProductForm/ProductForm';
 
 const ProductList = () => {
-  const [allProducts] = useState(mockProducts); // Source of truth, no longer set directly
+  const [allProducts, setAllProducts] = useState(mockProducts); // Allow updates
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [showForm, setShowForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
   const [itemsPerPage] = useState(5);
+
+  // Effect to reset pagination when allProducts changes (e.g., after delete/add)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [allProducts.length]);
 
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
@@ -16,8 +24,10 @@ const ProductList = () => {
   // Filter products based on search term
   const filteredProducts = allProducts.filter(product => {
     const term = searchTerm.toLowerCase();
-    return product.productName.toLowerCase().includes(term) ||
-           product.sku.toLowerCase().includes(term);
+    return (product.productName?.toLowerCase() || '').includes(term) ||
+           (product.sku?.toLowerCase() || '').includes(term) ||
+           (product.brand?.toLowerCase() || '').includes(term) ||
+           (Array.isArray(product.categories) ? product.categories.join(', ').toLowerCase() : '').includes(term);
   });
 
   // Pagination logic using filteredProducts
@@ -39,13 +49,61 @@ const ProductList = () => {
     }
   };
 
-  if (!allProducts || allProducts.length === 0) {
-    return <div className="product-list-container"><p>No products initially available.</p></div>;
+  const handleEdit = (product) => {
+    setEditingProduct(product);
+    setShowForm(true);
+  };
+
+  const handleDelete = (productId) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      setAllProducts(prevProducts =>
+        prevProducts.filter(p => p.id !== productId)
+      );
+    }
+  };
+
+  const handleSaveProduct = (productData) => {
+    console.log("Save product:", productData);
+    if (editingProduct) {
+      // Edit existing product
+      setAllProducts(prevProducts =>
+        prevProducts.map(p =>
+          p.id === editingProduct.id ? { ...editingProduct, ...productData } : p
+        )
+      );
+    } else {
+      // Create new product
+      const newProductId = allProducts.length > 0 ? Math.max(...allProducts.map(p => p.id)) + 1 : 1;
+      const newProduct = { ...productData, id: newProductId };
+      setAllProducts(prevProducts => [newProduct, ...prevProducts]); // Add to the beginning of the list
+    }
+    setShowForm(false);
+    setEditingProduct(null);
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingProduct(null);
+  };
+
+  if (!allProducts) { // Removed length check to allow showing create button for empty list
+    return <div className="product-list-container"><p>Loading products...</p></div>;
   }
 
   return (
     <div className="product-list-container">
       <h2>Product List</h2>
+
+      <button onClick={() => { setEditingProduct(null); setShowForm(true); }} className="btn-create">Create Product</button>
+
+      {showForm && (
+        <ProductForm
+          product={editingProduct}
+          onSave={handleSaveProduct}
+          onCancel={handleCancelForm}
+        />
+      )}
+
       <div className="search-container">
         <input
           type="text"
@@ -63,8 +121,11 @@ const ProductList = () => {
                 <th>Image</th>
                 <th>SKU</th>
                 <th>Product Name</th>
+                <th>Brand</th>
                 <th>Categories</th>
                 <th>Price</th>
+                <th>Discount</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -72,15 +133,21 @@ const ProductList = () => {
                 <tr key={product.id}>
                   <td>
                     <img
-                      src={product.productImage}
+                      src={product.productImage || 'https://via.placeholder.com/50'} // Fallback image
                       alt={product.productName}
                       className="product-image"
                     />
                   </td>
                   <td>{product.sku}</td>
                   <td>{product.productName}</td>
-                  <td>{product.categories.join(', ')}</td>
-                  <td>${product.price.toFixed(2)}</td>
+                  <td>{product.brand}</td>
+                  <td>{Array.isArray(product.categories) ? product.categories.join(', ') : ''}</td>
+                  <td>${(product.price || 0).toFixed(2)}</td>
+                  <td>{(product.discount || 0)}%</td>
+                  <td>
+                    <button onClick={() => handleEdit(product)} className="btn-edit">Edit</button>
+                    <button onClick={() => handleDelete(product.id)} className="btn-delete">Delete</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -100,7 +167,7 @@ const ProductList = () => {
           )}
         </>
       ) : (
-        <p>No products match your search criteria.</p>
+        <p>No products match your search criteria or no products available.</p>
       )}
     </div>
   );
