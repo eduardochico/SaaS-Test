@@ -1,163 +1,323 @@
 import React, { useState, useEffect } from 'react';
-import './ProductForm.css';
+import {
+  TextField, Button, DialogTitle, DialogActions, DialogContent, Box, Grid, Avatar, Typography,
+  MenuItem, FormControl, InputLabel, Select, OutlinedInput, Chip, FormHelperText
+} from '@mui/material';
+import { PhotoCamera } from '@mui/icons-material'; // For image upload button icon
 
-const ProductForm = ({ product, onSave, onCancel }) => {
-  const [errors, setErrors] = useState({});
+const ProductForm = ({ product, onSave, onCancel, brands = [], categories = [] }) => {
   const [formData, setFormData] = useState({
-    productImage: null, // Will be File object or null
-    productImagePreview: product?.productImage || '', // URL for existing image
+    productImageFile: null, // Store the File object
+    productImagePreview: product?.productImage || '', // URL for existing or new preview
     sku: '',
     productName: '',
-    brand: '',
-    categories: '', // Comma-separated string
+    brand_id: '', // Store ID
+    category_ids: [], // Store array of IDs
     price: '',
     discount: 0,
+    description: '', // Added description field
   });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (product) {
       setFormData({
-        productImage: null,
+        productImageFile: null,
         productImagePreview: product.productImage || '',
         sku: product.sku || '',
         productName: product.productName || '',
-        brand: product.brand || '',
-        categories: Array.isArray(product.categories) ? product.categories.join(', ') : '',
+        brand_id: product.brand_id || '',
+        category_ids: product.category_ids || [],
         price: product.price || '',
         discount: product.discount || 0,
+        description: product.description || '',
       });
-      setErrors({}); // Clear errors when loading a product
     } else {
-      // Reset for new product
       setFormData({
-        productImage: null,
-        productImagePreview: '',
-        sku: '',
-        productName: '',
-        brand: '',
-        categories: '',
-        price: '',
-        discount: 0,
+        productImageFile: null, productImagePreview: '', sku: '', productName: '',
+        brand_id: '', category_ids: [], price: '', discount: 0, description: '',
       });
-      setErrors({}); // Clear errors for new form
     }
+    setErrors({});
   }, [product]);
+
+  const validateField = (name, value) => {
+    let errorMsg = null;
+    switch (name) {
+      case 'sku':
+        if (!value.trim()) errorMsg = 'SKU is required.';
+        else if (!/^[A-Z0-9]+$/.test(value)) errorMsg = 'SKU must be uppercase alphanumeric, no spaces.';
+        break;
+      case 'productName':
+        if (!value.trim()) errorMsg = 'Product name is required.';
+        else if (value.length > 70) errorMsg = 'Product name must be 70 characters or less.';
+        break;
+      case 'brand_id':
+        if (!value) errorMsg = 'Brand is required.';
+        break;
+      case 'category_ids':
+        if (!value.length) errorMsg = 'At least one category is required.';
+        break;
+      case 'price':
+        if (value === '' || isNaN(Number(value))) errorMsg = 'Price must be a number.';
+        else if (Number(value) < 0) errorMsg = 'Price cannot be negative.';
+        break;
+      case 'discount':
+        if (value !== '' && (isNaN(Number(value)) || Number(value) < 0 || Number(value) > 100)) {
+          errorMsg = 'Discount must be a number between 0 and 100.';
+        }
+        break;
+      default:
+        break;
+    }
+    setErrors(prev => ({ ...prev, [name]: errorMsg }));
+    return !errorMsg;
+  };
+
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
-    let currentErrors = { ...errors };
-
     if (type === 'file') {
-      setFormData({
-        ...formData,
-        productImage: files[0],
-        productImagePreview: URL.createObjectURL(files[0]),
-      });
+      if (files && files[0]) {
+        const file = files[0];
+        setFormData(prev => ({
+          ...prev,
+          productImageFile: file,
+          productImagePreview: URL.createObjectURL(file),
+        }));
+        setErrors(prev => ({ ...prev, productImage: null})); // Clear any previous image error
+      }
     } else {
       let processedValue = value;
-      if (name === 'sku') {
-        processedValue = value.toUpperCase();
-        const skuRegex = /^[A-Z0-9]+$/;
-        if (!skuRegex.test(processedValue) && processedValue !== '') { // Allow empty to clear, then validate on submit
-          currentErrors.sku = 'SKU must be alphanumeric, no spaces or special characters.';
-        } else {
-          currentErrors.sku = null;
-        }
-      } else if (name === 'productName') {
-        if (value.length > 50) {
-          currentErrors.productName = 'Product Name must be 50 characters or less.';
-        } else {
-          currentErrors.productName = null;
-        }
-      }
-      setFormData({ ...formData, [name]: processedValue });
-      setErrors(currentErrors);
+      if (name === 'sku') processedValue = value.toUpperCase();
+
+      setFormData(prev => ({ ...prev, [name]: processedValue }));
+      validateField(name, processedValue);
     }
+  };
+
+  const handleMultiSelectChange = (event) => {
+    const { target: { value } } = event;
+    const newCategoryIds = typeof value === 'string' ? value.split(',') : value;
+    setFormData(prev => ({
+        ...prev,
+        category_ids: newCategoryIds,
+    }));
+    validateField('category_ids', newCategoryIds);
+  };
+
+
+  const validateForm = () => {
+    let isValid = true;
+    isValid = validateField('sku', formData.sku) && isValid;
+    isValid = validateField('productName', formData.productName) && isValid;
+    isValid = validateField('brand_id', formData.brand_id) && isValid;
+    isValid = validateField('category_ids', formData.category_ids) && isValid;
+    isValid = validateField('price', formData.price) && isValid;
+    isValid = validateField('discount', formData.discount) && isValid;
+    // productImage is optional for existing products, could add validation if required for new
+    return isValid;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // Simple check for active errors
-    if (Object.values(errors).some(error => error !== null)) {
-      alert('Please correct the form errors before submitting.');
+    if (!validateForm()) {
+      // alert('Please correct the form errors before submitting.');
       return;
     }
-    // Re-validate critical fields like SKU on submit, in case they were empty and not caught by handleChange
-    if (formData.sku === '' || (errors.sku && errors.sku !== null) ) { // Check if SKU is empty or still has an error
-        setErrors(prev => ({ ...prev, sku: 'SKU is required and must be alphanumeric.' }));
-        alert('Please correct the form errors before submitting.');
-        return;
-    }
-
 
     const productDataToSave = {
-      ...formData,
-      // Convert categories from string to array
-      categories: formData.categories.split(',').map(cat => cat.trim()).filter(cat => cat),
+      sku: formData.sku,
+      productName: formData.productName,
+      brand_id: formData.brand_id,
+      category_ids: formData.category_ids,
       price: parseFloat(formData.price) || 0,
       discount: parseFloat(formData.discount) || 0,
+      description: formData.description,
+      productImage: formData.productImagePreview, // Use preview URL (real app: upload then use returned URL)
     };
-    // If editing and no new image is selected, retain the original image URL
-    if (product && !formData.productImage) {
-        productDataToSave.productImage = product.productImage;
-    } else if (formData.productImage) {
-        // For new images, we'd typically upload and get a URL.
-        // For now, we'll use the preview URL, but this needs proper handling.
-        productDataToSave.productImage = formData.productImagePreview;
-    }
+
+    // In a real app, if productImageFile exists, you would upload it here
+    // and then set productDataToSave.productImage to the returned URL.
+    // For now, we're just using the preview URL.
+    // If editing and no new image is selected, productImagePreview already holds the existing URL.
+
     onSave(productDataToSave);
   };
 
+
   return (
-    <form onSubmit={handleSubmit} className="product-form">
-      <h3>{product ? 'Edit Product' : 'Create Product'}</h3>
+    <>
+      <DialogTitle>{product ? 'Edit Product' : 'Create New Product'}</DialogTitle>
+      <DialogContent>
+        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={3} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 2 }}>
+              <Avatar
+                src={formData.productImagePreview || undefined}
+                alt="Product Preview"
+                variant="rounded"
+                sx={{ width: 120, height: 120, mb: 1, bgcolor: 'grey.200' }}
+              >
+                {!formData.productImagePreview && <PhotoCamera sx={{ fontSize: 40, color: 'grey.400' }} />}
+              </Avatar>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<PhotoCamera />}
+                size="small"
+              >
+                Upload Image
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleChange}
+                  name="productImageFile" // Ensure name matches state if needed, though direct file handling is used
+                />
+              </Button>
+              {errors.productImage && <FormHelperText error sx={{textAlign: 'center'}}>{errors.productImage}</FormHelperText>}
+            </Grid>
 
-      <div className="form-group">
-        <label htmlFor="productImage">Product Image</label>
-        <input type="file" id="productImage" name="productImage" onChange={handleChange} />
-        {formData.productImagePreview && (
-          <img src={formData.productImagePreview} alt="Preview" className="image-preview" />
-        )}
-      </div>
+            <Grid item xs={12} sm={9}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="productName"
+                    label="Product Name"
+                    name="productName"
+                    autoFocus={!product}
+                    value={formData.productName}
+                    onChange={handleChange}
+                    error={!!errors.productName}
+                    helperText={errors.productName || "Max 70 characters"}
+                    inputProps={{ maxLength: 70 }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="sku"
+                    label="SKU"
+                    name="sku"
+                    value={formData.sku}
+                    onChange={handleChange}
+                    error={!!errors.sku}
+                    helperText={errors.sku || "Uppercase alphanumeric, no spaces"}
+                  />
+                </Grid>
+              </Grid>
+              <TextField
+                  margin="normal"
+                  fullWidth
+                  id="description"
+                  label="Description"
+                  name="description"
+                  multiline
+                  rows={2} // Adjust as needed
+                  value={formData.description}
+                  onChange={handleChange}
+                  // No specific validation for description in this example
+                />
+            </Grid>
 
-      <div className="form-group">
-        <label htmlFor="sku">SKU</label>
-        <input type="text" id="sku" name="sku" value={formData.sku} onChange={handleChange} placeholder="Alphanumeric, no spaces, uppercase" className={errors.sku ? 'invalid' : ''} />
-        {errors.sku && <p className="error-message">{errors.sku}</p>}
-      </div>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth margin="normal" required error={!!errors.brand_id}>
+                <InputLabel id="brand-select-label">Brand</InputLabel>
+                <Select
+                  labelId="brand-select-label"
+                  id="brand_id"
+                  name="brand_id"
+                  value={formData.brand_id}
+                  label="Brand"
+                  onChange={handleChange}
+                >
+                  <MenuItem value=""><em>Select Brand</em></MenuItem>
+                  {brands.map((brand) => (
+                    <MenuItem key={brand.id} value={brand.id}>{brand.name}</MenuItem>
+                  ))}
+                </Select>
+                {errors.brand_id && <FormHelperText>{errors.brand_id}</FormHelperText>}
+              </FormControl>
+            </Grid>
 
-      <div className="form-group">
-        <label htmlFor="productName">Product Name (max 50 chars)</label>
-        <input type="text" id="productName" name="productName" value={formData.productName} onChange={handleChange} maxLength="50" className={errors.productName ? 'invalid' : ''} />
-        {errors.productName && <p className="error-message">{errors.productName}</p>}
-      </div>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth margin="normal" required error={!!errors.category_ids}>
+                <InputLabel id="category-multiselect-label">Categories</InputLabel>
+                <Select
+                  labelId="category-multiselect-label"
+                  id="category_ids"
+                  multiple
+                  name="category_ids"
+                  value={formData.category_ids}
+                  onChange={handleMultiSelectChange}
+                  input={<OutlinedInput label="Categories" />}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.map((id) => {
+                        const category = categories.find(c => c.id === id);
+                        return <Chip key={id} label={category ? category.name : id} size="small" />;
+                      })}
+                    </Box>
+                  )}
+                >
+                  {categories.map((category) => (
+                    <MenuItem key={category.id} value={category.id}>
+                      {category.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.category_ids && <FormHelperText>{errors.category_ids}</FormHelperText>}
+              </FormControl>
+            </Grid>
 
-      <div className="form-group">
-        <label htmlFor="brand">Brand</label>
-        <input type="text" id="brand" name="brand" value={formData.brand} onChange={handleChange} />
-      </div>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="price"
+                label="Price"
+                name="price"
+                type="number"
+                value={formData.price}
+                onChange={handleChange}
+                error={!!errors.price}
+                helperText={errors.price}
+                InputProps={{ startAdornment: <Typography sx={{ mr: 0.5 }}>$</Typography> }}
+              />
+            </Grid>
 
-      <div className="form-group">
-        <label htmlFor="categories">Categories (comma-separated)</label>
-        <input type="text" id="categories" name="categories" value={formData.categories} onChange={handleChange} />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="price">Price</label>
-        <input type="number" id="price" name="price" value={formData.price} onChange={handleChange} step="0.01" />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="discount">Discount (%)</label>
-        <input type="number" id="discount" name="discount" value={formData.discount} onChange={handleChange} step="0.01" min="0" max="100" />
-      </div>
-
-      <div className="form-actions">
-        <button type="submit" className="btn-save">Save</button>
-        <button type="button" onClick={onCancel} className="btn-cancel">Cancel</button>
-      </div>
-    </form>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                margin="normal"
+                fullWidth
+                id="discount"
+                label="Discount"
+                name="discount"
+                type="number"
+                value={formData.discount}
+                onChange={handleChange}
+                error={!!errors.discount}
+                helperText={errors.discount || "0-100%"}
+                InputProps={{ endAdornment: <Typography sx={{ ml: 0.5 }}>%</Typography> }}
+              />
+            </Grid>
+          </Grid>
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ p: '16px 24px' }}>
+        <Button onClick={onCancel} color="inherit">Cancel</Button>
+        <Button onClick={handleSubmit} variant="contained" color="primary">
+          {product ? 'Save Changes' : 'Create Product'}
+        </Button>
+      </DialogActions>
+    </>
   );
 };
 
