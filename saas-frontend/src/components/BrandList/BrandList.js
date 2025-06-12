@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import mockBrandsData from '../../data/mockBrands.js';
 import BrandForm from '../BrandForm/BrandForm.js';
-import './BrandList.css'; // Assuming you'll create this
+import {
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, TextField,
+  Dialog, DialogContent, Pagination, Box, Typography, Paper, Avatar
+} from '@mui/material';
+import { Edit, Delete, Add } from '@mui/icons-material';
 
 const BrandList = () => {
   const [allBrands, setAllBrands] = useState(mockBrandsData);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5); // Or adjust as needed
+  const [itemsPerPage] = useState(5);
   const [showForm, setShowForm] = useState(false);
   const [editingBrand, setEditingBrand] = useState(null);
+  const [brandToDelete, setBrandToDelete] = useState(null); // For confirmation dialog
 
-  // Reset pagination if items change
   useEffect(() => {
     setCurrentPage(1);
   }, [allBrands.length, searchTerm]);
@@ -30,12 +34,8 @@ const BrandList = () => {
   const currentItems = filteredBrands.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredBrands.length / itemsPerPage);
 
-  const nextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-  };
-
-  const prevPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
   };
 
   const handleCreate = () => {
@@ -48,18 +48,28 @@ const BrandList = () => {
     setShowForm(true);
   };
 
-  const handleDelete = (brandId) => {
-    if (window.confirm('Are you sure you want to delete this brand?')) {
-      setAllBrands(prev => prev.filter(b => b.id !== brandId));
-    }
+  const handleDeleteInitiate = (brandId) => {
+    setBrandToDelete(brandId);
   };
+
+  const handleDeleteConfirm = () => {
+    if (brandToDelete) {
+      setAllBrands(prev => prev.filter(b => b.id !== brandToDelete));
+    }
+    setBrandToDelete(null); // Close confirmation dialog
+  };
+
+  const handleDeleteCancel = () => {
+    setBrandToDelete(null); // Close confirmation dialog
+  };
+
 
   const handleSave = (brandData) => {
     if (editingBrand) {
       setAllBrands(prev => prev.map(b => b.id === editingBrand.id ? { ...editingBrand, ...brandData } : b));
     } else {
       const newId = allBrands.length > 0 ? Math.max(...allBrands.map(b => b.id)) + 1 : 1;
-      setAllBrands(prev => [{ ...brandData, id: newId }, ...prev]);
+      setAllBrands(prev => [{ ...brandData, id: newId }, ...prev].sort((a,b) => a.name.localeCompare(b.name)));
     }
     setShowForm(false);
     setEditingBrand(null);
@@ -71,81 +81,117 @@ const BrandList = () => {
   };
 
   return (
-    <div className="brand-list-container">
-      <h2>Manage Brands</h2>
-      <button onClick={handleCreate} className="btn-create-brand">Create New Brand</button>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom component="div" sx={{ mb: 2 }}>
+        Manage Brands
+      </Typography>
 
-      {showForm && (
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+        <TextField
+          label="Search Brands"
+          variant="outlined"
+          value={searchTerm}
+          onChange={handleSearchChange}
+          sx={{ width: '40%' }}
+        />
+        <Button
+          variant="contained"
+          startIcon={<Add />}
+          onClick={handleCreate}
+          sx={{ height: 'fit-content' }}
+        >
+          Create New Brand
+        </Button>
+      </Box>
+
+      <Dialog open={showForm} onClose={handleCancel} maxWidth="sm" fullWidth>
         <BrandForm
           brand={editingBrand}
           onSave={handleSave}
           onCancel={handleCancel}
         />
-      )}
-
-      <div className="search-container">
-        <input
-          type="text"
-          placeholder="Search Brands..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          className="search-input"
-        />
-      </div>
+      </Dialog>
 
       {currentItems.length > 0 ? (
-        <>
-          <table className="brands-table">
-            <thead>
-              <tr>
-                <th>Logo</th>
-                <th>Name</th>
-                <th>Website</th>
-                <th>Description</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentItems.map((brand) => (
-                <tr key={brand.id}>
-                  <td>
-                    {brand.logo_url ? (
-                      <img src={brand.logo_url} alt={`${brand.name} Logo`} className="brand-logo-preview" />
-                    ) : (
-                      'No Logo'
-                    )}
-                  </td>
-                  <td>{brand.name}</td>
-                  <td>
-                    {brand.website_url ? (
-                      <a href={brand.website_url} target="_blank" rel="noopener noreferrer">
-                        {brand.website_url}
-                      </a>
-                    ) : (
-                      'N/A'
-                    )}
-                  </td>
-                  <td>{brand.description || 'N/A'}</td>
-                  <td>
-                    <button onClick={() => handleEdit(brand)} className="btn-edit">Edit</button>
-                    <button onClick={() => handleDelete(brand.id)} className="btn-delete">Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <Paper sx={{ mb: 2 }}>
+          <TableContainer>
+            <Table sx={{ minWidth: 650 }} aria-label="brands table">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Logo</TableCell>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Website</TableCell>
+                  <TableCell>Description</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {currentItems.map((brand) => (
+                  <TableRow
+                    key={brand.id}
+                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                  >
+                    <TableCell component="th" scope="row">
+                      <Avatar src={brand.logo_url} alt={`${brand.name} Logo`}>
+                        {!brand.logo_url && brand.name ? brand.name.charAt(0) : ''}
+                      </Avatar>
+                    </TableCell>
+                    <TableCell>{brand.name}</TableCell>
+                    <TableCell>
+                      {brand.website_url ? (
+                        <a href={brand.website_url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                          {brand.website_url}
+                        </a>
+                      ) : (
+                        'N/A'
+                      )}
+                    </TableCell>
+                    <TableCell>{brand.description || 'N/A'}</TableCell>
+                    <TableCell align="right">
+                      <Button startIcon={<Edit />} onClick={() => handleEdit(brand)} sx={{ mr: 1 }}>
+                        Edit
+                      </Button>
+                      <Button startIcon={<Delete />} color="error" onClick={() => handleDeleteInitiate(brand.id)}>
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
           {totalPages > 1 && (
-            <div className="pagination-controls">
-              <button onClick={prevPage} disabled={currentPage === 1}>Previous</button>
-              <span>Page {currentPage} of {totalPages}</span>
-              <button onClick={nextPage} disabled={currentPage === totalPages}>Next</button>
-            </div>
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={handlePageChange}
+                color="primary"
+              />
+            </Box>
           )}
-        </>
+        </Paper>
       ) : (
-        <p>No brands found{searchTerm && ' matching your search criteria'}.</p>
+        <Typography variant="subtitle1" sx={{ mt: 2, textAlign: 'center' }}>
+          No brands found{searchTerm && ' matching your search criteria'}.
+        </Typography>
       )}
-    </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!brandToDelete} onClose={handleDeleteCancel}>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this brand?</Typography>
+        </DialogContent>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p:2 }}>
+            <Button onClick={handleDeleteCancel} color="primary">
+            Cancel
+            </Button>
+            <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+            Delete
+            </Button>
+        </Box>
+      </Dialog>
+    </Box>
   );
 };
 

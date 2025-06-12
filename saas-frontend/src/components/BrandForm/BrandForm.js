@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './BrandForm.css';
+import { TextField, Button, DialogTitle, DialogActions, DialogContent, Box, Grid, Avatar, Typography } from '@mui/material';
 
 const BrandForm = ({ brand, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -21,17 +21,25 @@ const BrandForm = ({ brand, onSave, onCancel }) => {
     } else {
       setFormData({ name: '', logo_url: '', website_url: '', description: '' });
     }
-    setErrors({}); // Clear errors when form loads or brand changes
+    setErrors({});
   }, [brand]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Basic validation example: Name is required
     if (name === 'name' && !value.trim()) {
       setErrors(prev => ({ ...prev, name: 'Brand name is required.' }));
     } else if (name === 'name') {
       setErrors(prev => ({ ...prev, name: null }));
+    }
+  };
+
+  const validateURL = (url) => {
+    try {
+      new URL(url);
+      return true;
+    } catch (_) {
+      return false;
     }
   };
 
@@ -40,14 +48,11 @@ const BrandForm = ({ brand, onSave, onCancel }) => {
     if (!formData.name.trim()) {
       newErrors.name = 'Brand name is required.';
     }
-    // Add other validations if needed, e.g., URL format
-    if (formData.website_url && !formData.website_url.startsWith('http')) {
-        newErrors.website_url = 'Please enter a valid URL (e.g., http://example.com).';
+    if (formData.website_url && !validateURL(formData.website_url)) {
+      newErrors.website_url = 'Please enter a valid URL (e.g., http://example.com).';
     }
-    if (formData.logo_url && !formData.logo_url.startsWith('http')) {
-        // For simplicity, assuming logo_url is also a direct URL.
-        // In a real app, this might be a file upload.
-        newErrors.logo_url = 'Please enter a valid image URL.';
+    if (formData.logo_url && !validateURL(formData.logo_url)) {
+      newErrors.logo_url = 'Please enter a valid image URL.';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -61,66 +66,89 @@ const BrandForm = ({ brand, onSave, onCancel }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="brand-form">
-      <h3>{brand ? 'Edit Brand' : 'Create Brand'}</h3>
-
-      <div className="form-group">
-        <label htmlFor="name">Brand Name*</label>
-        <input
-          type="text"
-          id="name"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          className={errors.name ? 'invalid' : ''}
-        />
-        {errors.name && <p className="error-message">{errors.name}</p>}
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="logo_url">Logo URL</label>
-        <input
-          type="url" // Use type="url" for better semantics
-          id="logo_url"
-          name="logo_url"
-          value={formData.logo_url}
-          onChange={handleChange}
-          placeholder="https://example.com/logo.png"
-          className={errors.logo_url ? 'invalid' : ''}
-        />
-        {formData.logo_url && !errors.logo_url && <img src={formData.logo_url} alt="Logo Preview" className="image-preview" />}
-        {errors.logo_url && <p className="error-message">{errors.logo_url}</p>}
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="website_url">Website URL</label>
-        <input
-          type="url" // Use type="url"
-          id="website_url"
-          name="website_url"
-          value={formData.website_url}
-          onChange={handleChange}
-          placeholder="https://example.com"
-          className={errors.website_url ? 'invalid' : ''}
-        />
-        {errors.website_url && <p className="error-message">{errors.website_url}</p>}
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="description">Description</label>
-        <textarea
-          id="description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div className="form-actions">
-        <button type="submit" className="btn-save">Save Brand</button>
-        <button type="button" onClick={onCancel} className="btn-cancel">Cancel</button>
-      </div>
-    </form>
+    <>
+      <DialogTitle>{brand ? 'Edit Brand' : 'Create New Brand'}</DialogTitle>
+      <DialogContent>
+        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={2} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Avatar
+                src={formData.logo_url}
+                alt={formData.name ? `${formData.name} Logo` : 'Brand Logo Preview'}
+                sx={{ width: 80, height: 80, mr: 2, bgcolor: 'grey.300' }}
+              >
+                {!formData.logo_url && formData.name ? formData.name.charAt(0) : null}
+              </Avatar>
+            </Grid>
+            <Grid item xs={12} sm={10}>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="name"
+                label="Brand Name"
+                name="name"
+                autoComplete="organization"
+                autoFocus={!brand} // Autofocus on create
+                value={formData.name}
+                onChange={handleChange}
+                error={!!errors.name}
+                helperText={errors.name}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                margin="normal"
+                fullWidth
+                id="logo_url"
+                label="Logo URL"
+                name="logo_url"
+                autoComplete="url"
+                value={formData.logo_url}
+                onChange={handleChange}
+                error={!!errors.logo_url}
+                helperText={errors.logo_url || "e.g., https://example.com/logo.png"}
+                placeholder="https://example.com/logo.png"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                margin="normal"
+                fullWidth
+                id="website_url"
+                label="Website URL"
+                name="website_url"
+                autoComplete="url"
+                value={formData.website_url}
+                onChange={handleChange}
+                error={!!errors.website_url}
+                helperText={errors.website_url || "e.g., https://example.com"}
+                placeholder="https://example.com"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                margin="normal"
+                fullWidth
+                id="description"
+                label="Description"
+                name="description"
+                multiline
+                rows={3}
+                value={formData.description}
+                onChange={handleChange}
+              />
+            </Grid>
+          </Grid>
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ p: '16px 24px' }}>
+        <Button onClick={onCancel} color="inherit">Cancel</Button>
+        <Button onClick={handleSubmit} variant="contained" color="primary">
+          {brand ? 'Save Changes' : 'Create Brand'}
+        </Button>
+      </DialogActions>
+    </>
   );
 };
 

@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import mockCategoriesData from '../../data/mockCategories.js';
 import CategoryForm from '../CategoryForm/CategoryForm.js';
-import './CategoryList.css';
+import {
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, TextField,
+  Dialog, DialogActions, DialogContent, Pagination, Box, Typography, Paper
+} from '@mui/material';
+import { Edit, Delete, Add } from '@mui/icons-material';
 
 const CategoryList = () => {
   const [allCategories, setAllCategories] = useState(mockCategoriesData);
@@ -10,6 +14,7 @@ const CategoryList = () => {
   const [itemsPerPage] = useState(5);
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -28,19 +33,16 @@ const CategoryList = () => {
   const filteredCategories = allCategories.filter(category =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  ).sort((a, b) => a.name.localeCompare(b.name));
+
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredCategories.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
 
-  const nextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-  };
-
-  const prevPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
   };
 
   const handleCreate = () => {
@@ -53,10 +55,21 @@ const CategoryList = () => {
     setShowForm(true);
   };
 
-  const handleDelete = (categoryId) => {
-    if (window.confirm('Are you sure you want to delete this category? This might affect subcategories or product associations in a real application.')) {
-      setAllCategories(prev => prev.filter(c => c.id !== categoryId));
+  const handleDeleteInitiate = (categoryId) => {
+    setCategoryToDelete(categoryId);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (categoryToDelete) {
+      // Consider implications: what happens to sub-categories or products?
+      // For now, just filter out. A real app might need more complex logic.
+      setAllCategories(prev => prev.filter(c => c.id !== categoryToDelete));
     }
+    setCategoryToDelete(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setCategoryToDelete(null);
   };
 
   const handleSave = (categoryData) => {
@@ -76,66 +89,107 @@ const CategoryList = () => {
   };
 
   return (
-    <div className="category-list-container">
-      <h2>Manage Categories</h2>
-      <button onClick={handleCreate} className="btn-create-category">Create New Category</button>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom component="div" sx={{ mb: 2 }}>
+        Manage Categories
+      </Typography>
 
-      {showForm && (
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+        <TextField
+          label="Search Categories"
+          variant="outlined"
+          value={searchTerm}
+          onChange={handleSearchChange}
+          sx={{ width: '40%' }}
+        />
+        <Button
+          variant="contained"
+          startIcon={<Add />}
+          onClick={handleCreate}
+          sx={{ height: 'fit-content' }}
+        >
+          Create New Category
+        </Button>
+      </Box>
+
+      <Dialog open={showForm} onClose={handleCancel} maxWidth="sm" fullWidth>
         <CategoryForm
           category={editingCategory}
           onSave={handleSave}
           onCancel={handleCancel}
-          categories={allCategories} // Pass all categories for parent selection
+          categories={allCategories}
         />
-      )}
-
-      <div className="search-container">
-        <input
-          type="text"
-          placeholder="Search Categories..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          className="search-input"
-        />
-      </div>
+      </Dialog>
 
       {currentItems.length > 0 ? (
-        <>
-          <table className="categories-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Parent Category</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentItems.map((category) => (
-                <tr key={category.id}>
-                  <td>{category.name}</td>
-                  <td>{category.description || 'N/A'}</td>
-                  <td>{getCategoryNameById(category.parent_category_id)}</td>
-                  <td>
-                    <button onClick={() => handleEdit(category)} className="btn-edit">Edit</button>
-                    <button onClick={() => handleDelete(category.id)} className="btn-delete">Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <Paper sx={{ mb: 2 }}>
+          <TableContainer>
+            <Table sx={{ minWidth: 650 }} aria-label="categories table">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Description</TableCell>
+                  <TableCell>Parent Category</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {currentItems.map((category) => (
+                  <TableRow
+                    key={category.id}
+                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                  >
+                    <TableCell component="th" scope="row">
+                      {category.name}
+                    </TableCell>
+                    <TableCell>{category.description || 'N/A'}</TableCell>
+                    <TableCell>{getCategoryNameById(category.parent_category_id)}</TableCell>
+                    <TableCell align="right">
+                      <Button startIcon={<Edit />} onClick={() => handleEdit(category)} sx={{ mr: 1 }}>
+                        Edit
+                      </Button>
+                      <Button startIcon={<Delete />} color="error" onClick={() => handleDeleteInitiate(category.id)}>
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
           {totalPages > 1 && (
-            <div className="pagination-controls">
-              <button onClick={prevPage} disabled={currentPage === 1}>Previous</button>
-              <span>Page {currentPage} of {totalPages}</span>
-              <button onClick={nextPage} disabled={currentPage === totalPages}>Next</button>
-            </div>
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={handlePageChange}
+                color="primary"
+              />
+            </Box>
           )}
-        </>
+        </Paper>
       ) : (
-        <p>No categories found{searchTerm && ' matching your search criteria'}.</p>
+        <Typography variant="subtitle1" sx={{ mt: 2, textAlign: 'center' }}>
+          No categories found{searchTerm && ' matching your search criteria'}.
+        </Typography>
       )}
-    </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!categoryToDelete} onClose={handleDeleteCancel}>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this category?</Typography>
+          <Typography variant="body2" color="text.secondary">
+            This might affect subcategories or product associations in a real application.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel}>Cancel</Button>
+          <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 
